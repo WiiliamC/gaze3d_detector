@@ -10,11 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 def unproject_edges_to_sphere(
-    edges, focal_length, sphere_center, sphere_radius, width=640, height=480
+    edges,
+    focal_length,
+    sphere_center,
+    sphere_radius,
+    width=640,
+    height=480,
+    cx=None,
+    cy=None,
 ):
     n_edges = edges.shape[0]
 
-    directions = edges - np.asarray([width / 2.0, height / 2.0])
+    cx_val = cx if cx is not None else width / 2.0
+    cy_val = cy if cy is not None else height / 2.0
+    directions = edges - np.asarray([cx_val, cy_val])
     directions = np.hstack((directions, focal_length * np.ones((n_edges, 1))))
     directions = directions / np.linalg.norm(directions, axis=1, keepdims=1)
 
@@ -44,7 +53,7 @@ def project_line_into_image_plane(line, focal_length):
 
 
 def project_circle_into_image_plane(
-    circle, focal_length, transform=True, width=0, height=0
+    circle, focal_length, transform=True, width=0, height=0, cx=None, cy=None
 ):
     c = circle.center
     n = circle.normal
@@ -82,8 +91,10 @@ def project_circle_into_image_plane(
 
         # TO BE CONSISTENT WITH PUPIL
         if transform:
-            center_x = center_x + width / 2.0
-            center_y = center_y + height / 2.0
+            cx_val = cx if cx is not None else width / 2.0
+            cy_val = cy if cy is not None else height / 2.0
+            center_x = center_x + cx_val
+            center_y = center_y + cy_val
             minor_axis, major_axis = 2.0 * minor_axis, 2.0 * major_axis
             angle = angle * 180.0 / np.pi + 90.0
 
@@ -94,16 +105,18 @@ def project_circle_into_image_plane(
 
 
 def project_sphere_into_image_plane(
-    sphere, focal_length, transform=True, width=0, height=0
+    sphere, focal_length, transform=True, width=0, height=0, cx=None, cy=None
 ):
     scale = focal_length / sphere.center[2]
 
-    projected_sphere_center = scale * sphere.center
+    projected_sphere_center = scale * np.asarray(sphere.center)
     projected_radius = scale * sphere.radius
 
     if transform:
-        projected_sphere_center[0] += width / 2.0
-        projected_sphere_center[1] += height / 2
+        cx_val = cx if cx is not None else width / 2.0
+        cy_val = cy if cy is not None else height / 2.0
+        projected_sphere_center[0] += cx_val
+        projected_sphere_center[1] += cy_val
         projected_radius *= 2.0
 
     return Ellipse(projected_sphere_center[:2], projected_radius, projected_radius, 0.0)

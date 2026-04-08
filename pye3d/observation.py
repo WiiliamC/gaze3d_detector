@@ -208,10 +208,14 @@ class BinBufferedObservationStorage(ObservationStorage):
         return np.reshape(dense_1d, (self.w, self.h))
 
     def _get_bin(self, observation: Observation) -> int:
+        cx_computed = self.camera.cx_computed
+        cy_computed = self.camera.cy_computed
         x, y = (
-            floor((ellipse_center + resolution / 2) / self.pixels_per_bin)
-            for ellipse_center, resolution in zip(
-                observation.ellipse.center, self.camera.resolution
+            floor((ellipse_center + center_offset) / self.pixels_per_bin)
+            for ellipse_center, center_offset, resolution in zip(
+                observation.ellipse.center,
+                [cx_computed, cy_computed],
+                self.camera.resolution,
             )
         )
         # convert to 1D bin index

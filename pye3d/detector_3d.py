@@ -324,9 +324,11 @@ class Detector3D:
 
     def _extract_observation(self, pupil_datum: Dict) -> Observation:
         width, height = self.camera.resolution
+        cx_computed = self.camera.cx_computed
+        cy_computed = self.camera.cy_computed
         center = (
-            pupil_datum["ellipse"]["center"][0] - width / 2,
-            pupil_datum["ellipse"]["center"][1] - height / 2,
+            pupil_datum["ellipse"]["center"][0] - cx_computed,
+            pupil_datum["ellipse"]["center"][1] - cy_computed,
         )
         minor_radius = pupil_datum["ellipse"]["axes"][0] / 2.0
         major_radius = pupil_datum["ellipse"]["axes"][1] / 2.0
@@ -420,12 +422,14 @@ class Detector3D:
             self.camera.focal_length,
             self.camera.resolution,
             major_axis_factor=2.5,
+            cx=self.camera.cx_computed,
+            cy=self.camera.cy_computed,
         )
 
         if len(edges) <= 0:
             return no_result
 
-        (gaze_vector, pupil_radius, final_edges, edges_on_sphere) = search_on_sphere(
+        gaze_vector, pupil_radius, final_edges, edges_on_sphere = search_on_sphere(
             edges,
             best_guess.normal,
             best_guess.radius,
@@ -433,6 +437,8 @@ class Detector3D:
             _EYE_RADIUS_DEFAULT,
             self.camera.focal_length,
             self.camera.resolution,
+            cx=self.camera.cx_computed,
+            cy=self.camera.cy_computed,
         )
 
         if debug:
@@ -442,8 +448,8 @@ class Detector3D:
                     edge = project_point_into_image_plane(
                         edge, self.camera.focal_length
                     ).astype(np.int)
-                    edge[0] += self.camera.resolution[0] / 2
-                    edge[1] += self.camera.resolution[1] / 2
+                    edge[0] += self.camera.cx_computed
+                    edge[1] += self.camera.cy_computed
                     cv2.rectangle(
                         frame_,
                         (edge[0] - roi[2], edge[1] - roi[0]),
@@ -456,8 +462,8 @@ class Detector3D:
                     edge = project_point_into_image_plane(
                         edge, self.camera.focal_length
                     ).astype(np.int)
-                    edge[0] += self.camera.resolution[0] / 2
-                    edge[1] += self.camera.resolution[1] / 2
+                    edge[0] += self.camera.cx_computed
+                    edge[1] += self.camera.cy_computed
                     cv2.rectangle(
                         frame_,
                         (edge[0] - roi[2], edge[1] - roi[0]),

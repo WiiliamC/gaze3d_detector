@@ -63,16 +63,20 @@ def get_edges(frame,
               sphere_radius,
               focal_length,
               resolution,
-              major_axis_factor=1.5):
+              major_axis_factor=1.5,
+              cx=None,
+              cy=None):
 
 
     predicted_pupil_center = sphere_center + _EYE_RADIUS_DEFAULT * predicted_gaze_vector
     projected_pupil_center = project_point_into_image_plane(predicted_pupil_center, focal_length)
     major_axis_estimate = predicted_pupil_radius/np.linalg.norm(predicted_pupil_center)*focal_length
 
+    cx_val = cx if cx is not None else resolution[0]/2
+    cy_val = cy if cy is not None else resolution[1]/2
     x, y = projected_pupil_center
-    x = x + resolution[0]/2
-    y = y + resolution[1]/2
+    x = x + cx_val
+    y = y + cy_val
     major_axis =  major_axis_factor * major_axis_estimate
     N,M = frame.shape
     ymin, ymax = max(0,int(y-major_axis)), min(N,int(y+major_axis))
@@ -101,10 +105,13 @@ def search_on_sphere(edges,
                   sphere_center,
                   sphere_radius,
                   focal_length,
-                  resolution):
+                  resolution,
+                  cx=None,
+                  cy=None):
 
     edges_on_sphere, idxs = unproject_edges_to_sphere(
-        edges, focal_length, sphere_center, sphere_radius, resolution[0], resolution[1]
+        edges, focal_length, sphere_center, sphere_radius, 
+        resolution[0], resolution[1], cx=cx, cy=cy
     )
     if len(edges_on_sphere)<=0:
          return np.asarray([0.,0.,-1.]), 0.0, [], []
